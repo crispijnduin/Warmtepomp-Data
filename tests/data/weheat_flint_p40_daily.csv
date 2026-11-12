@@ -1,0 +1,9 @@
+# Echte dag-statistieken van dezelfde installatie: stroomverbruik en
+# warmteopbrengst van de warmtepomp over de eerste week na installatie.
+day,electricity_kwh,output_kwh
+2026-11-06,11.4125,29.1358
+2026-11-07,27.7025,73.1933
+2026-11-08,9.54473,33.7264
+2026-11-09,9.82104,33.8642
+2026-11-10,25.149,78.6824
+2026-11-11,16.2647,55.1006

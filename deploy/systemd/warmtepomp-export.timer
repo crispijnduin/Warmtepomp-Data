@@ -1,0 +1,11 @@
+# Elke nacht om 03:17 exporteren; een onregelmatig tijdstip voorkomt dat het
+# samenvalt met back-ups en andere nachtelijke taken.
+[Unit]
+Description=Dagelijkse export van de warmtepompdata
+
+[Timer]
+OnCalendar=*-*-* 03:17:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target

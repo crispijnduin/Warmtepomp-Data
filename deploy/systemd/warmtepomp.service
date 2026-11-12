@@ -1,0 +1,48 @@
+# Capture als systemd-service, bijvoorbeeld op een Raspberry Pi of NAS.
+#
+#   sudo useradd --system --home /var/lib/warmtepomp --create-home warmtepomp
+#   sudo python3 -m venv /opt/warmtepomp && sudo /opt/warmtepomp/bin/pip install .
+#   sudo install -m 600 -o warmtepomp /dev/stdin /etc/warmtepomp.env <<< \
+#     'WARMTEPOMP_HA_URL=http://homeassistant.local:8123
+#      WARMTEPOMP_HA_TOKEN=...'
+#   sudo install -m 644 deploy/systemd/warmtepomp.service /etc/systemd/system/
+#   sudo systemctl enable --now warmtepomp
+
+[Unit]
+Description=Warmtepomp data capture
+Documentation=https://github.com/crispijnduin/Warmtepomp-Data
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=warmtepomp
+Group=warmtepomp
+EnvironmentFile=/etc/warmtepomp.env
+Environment=WARMTEPOMP_DB_PATH=/var/lib/warmtepomp/warmtepomp.sqlite
+Environment=WARMTEPOMP_EXPORT_DIR=/var/lib/warmtepomp/export
+ExecStart=/opt/warmtepomp/bin/warmtepomp run
+Restart=always
+RestartSec=10s
+# Laat de service netjes afronden zodat de queue nog wordt weggeschreven.
+KillSignal=SIGTERM
+TimeoutStopSec=30s
+
+# De service hoeft niets anders te kunnen dan naar zijn eigen map schrijven.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/warmtepomp
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+RestrictNamespaces=true
+LockPersonality=true
+MemoryDenyWriteExecute=true
+SystemCallFilter=@system-service
+SystemCallErrorNumber=EPERM
+
+[Install]
+WantedBy=multi-user.target

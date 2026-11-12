@@ -1,0 +1,44 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "warmtepomp-data"
+version = "1.0.0"
+description = "Vastleggen van alle beschikbare data van een (Weheat) warmtepomp via Home Assistant"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+dependencies = [
+    "aiohttp>=3.9",
+    "PyYAML>=6.0",
+]
+
+[project.optional-dependencies]
+parquet = ["pyarrow>=15.0"]
+dev = ["pytest>=8.0", "pytest-asyncio>=0.23"]
+
+[project.scripts]
+warmtepomp = "warmtepomp.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/warmtepomp"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+testpaths = ["tests"]
+filterwarnings = ["error::DeprecationWarning:warmtepomp.*"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["F", "E", "W", "I", "UP", "B", "SIM", "RET", "C4", "PTH"]
+# timezone.utc is leesbaarder dan de datetime.UTC-alias en werkt breder.
+ignore = ["UP017", "E501"]
+
+[tool.ruff.lint.per-file-ignores]
+# Fixtures worden via de naam geactiveerd, ook als de test ze niet aanraakt.
+"tests/*" = ["ARG001", "ARG002"]

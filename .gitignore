@@ -1,0 +1,23 @@
+# Omgeving
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+
+# Geheimen en lokale configuratie
+.env
+warmtepomp.yaml
+
+# Vastgelegde data: hoort in een back-up, niet in git
+data/*.sqlite
+data/*.sqlite-wal
+data/*.sqlite-shm
+data/export/
+
+# Test- en editor-rommel
+.pytest_cache/
+.ruff_cache/
+.coverage
+.DS_Store

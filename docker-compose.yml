@@ -1,0 +1,32 @@
+# Capture-service naast Home Assistant.
+#   cp .env.example .env   en vul HA_URL en HA_TOKEN in
+#   docker compose up -d
+services:
+  warmtepomp:
+    build: .
+    image: warmtepomp-data:1.0.0
+    container_name: warmtepomp-data
+    restart: unless-stopped
+    environment:
+      WARMTEPOMP_HA_URL: ${HA_URL:?zet HA_URL in .env}
+      WARMTEPOMP_HA_TOKEN: ${HA_TOKEN:?zet HA_TOKEN in .env}
+      WARMTEPOMP_INTEGRATIONS: ${INTEGRATIONS:-weheat}
+      WARMTEPOMP_TIMEZONE: ${TZ:-Europe/Amsterdam}
+      WARMTEPOMP_LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      TZ: ${TZ:-Europe/Amsterdam}
+    volumes:
+      - warmtepomp-data:/data
+    # De service schrijft alleen naar /data en heeft verder niets nodig.
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  warmtepomp-data:

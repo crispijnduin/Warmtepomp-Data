@@ -1,0 +1,60 @@
+# Configuratie van de warmtepomp-capture.
+# Kopieer dit bestand naar warmtepomp.yaml en vul het aan.
+# Elke instelling kan ook via een environment-variabele, met het voorvoegsel
+# WARMTEPOMP_ en de naam in hoofdletters (WARMTEPOMP_HA_URL, WARMTEPOMP_DB_PATH).
+# De environment wint van dit bestand.
+
+# --- Home Assistant ---------------------------------------------------------
+ha_url: http://homeassistant.local:8123
+# Maak een token aan in Home Assistant: profielpagina, onderaan,
+# "Langlevende toegangstokens". Zet hem liever in de environment of in een
+# .env-bestand dan hier, zodat hij niet in git belandt.
+ha_token: ""
+verify_ssl: true
+
+# --- Wat vastleggen ---------------------------------------------------------
+# Alle entiteiten van deze integraties. Voor een Weheat-warmtepomp is dit genoeg:
+# ook sensoren die later door een update worden toegevoegd komen automatisch mee.
+integrations:
+  - weheat
+
+# Extra apparaten, op device-id of naam. Handig als de warmtepomp via een
+# andere integratie loopt (Modbus, MQTT, Quatt, Daikin Onecta, ...).
+devices: []
+#  - Flint P40 heat pump
+
+# Losse entiteiten die er inhoudelijk bij horen. Een eigen buitentemperatuur-
+# sensor is sterk aan te raden: die in de buitenunit loopt op door de zon.
+extra_entities: []
+#  - sensor.buitentemperatuur
+#  - sensor.slimme_meter_vermogen
+#  - weather.home
+
+# Entiteiten die nooit worden vastgelegd. Glob-patronen mogen.
+exclude_entities: []
+#  - sensor.*_firmware
+
+# --- Opslag -----------------------------------------------------------------
+db_path: data/warmtepomp.sqlite
+export_dir: data/export
+# Attributen van entiteiten meenemen (alleen bij wijziging weggeschreven).
+store_attributes: true
+
+# --- Timing (seconden) ------------------------------------------------------
+# Volledige snapshot als vangnet voor gemiste events.
+snapshot_interval: 300
+# Opnieuw kijken of er entiteiten bij zijn gekomen.
+rediscover_interval: 3600
+reconnect_min_delay: 2
+reconnect_max_delay: 120
+ws_timeout: 30
+
+# --- Backfill ---------------------------------------------------------------
+# Bij het starten wordt bestaande historie uit Home Assistant overgenomen.
+backfill_periods: [5minute, hour, day, month]
+backfill_days: 400
+
+# --- Overig -----------------------------------------------------------------
+# Tijdzone voor dag- en maandgrenzen. Zet gelijk aan die van Home Assistant.
+timezone: Europe/Amsterdam
+log_level: INFO

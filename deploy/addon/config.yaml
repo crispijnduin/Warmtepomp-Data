@@ -1,0 +1,42 @@
+# Home Assistant add-on. Zet deze map in /addons/warmtepomp-data op de
+# Home Assistant-machine; de add-on verschijnt dan onder "Lokale add-ons".
+name: Warmtepomp Data
+version: "1.0.0"
+slug: warmtepomp_data
+description: Legt alle beschikbare data van de warmtepomp vast in een eigen database
+url: https://github.com/crispijnduin/Warmtepomp-Data
+arch:
+  - amd64
+  - aarch64
+  - armv7
+init: false
+# Geeft de add-on toegang tot de Home Assistant API via de Supervisor-proxy,
+# zodat er geen eigen token nodig is.
+homeassistant_api: true
+# De database komt in /addons_config of /share, zodat hij de add-on overleeft
+# en in de reguliere Home Assistant-back-up meegaat.
+map:
+  - type: share
+    read_only: false
+  - type: config
+    read_only: true
+options:
+  integrations: weheat
+  devices: ""
+  extra_entities: ""
+  exclude_entities: ""
+  snapshot_interval: 300
+  rediscover_interval: 3600
+  store_attributes: true
+  backfill_days: 400
+  log_level: INFO
+schema:
+  integrations: str
+  devices: str?
+  extra_entities: str?
+  exclude_entities: str?
+  snapshot_interval: int(10,86400)
+  rediscover_interval: int(0,86400)
+  store_attributes: bool
+  backfill_days: int(0,3650)
+  log_level: list(DEBUG|INFO|WARNING|ERROR)
