@@ -163,6 +163,34 @@ def _mode_entity(store: Store) -> str | None:
     return str(row["entity_id"]) if row else None
 
 
+# Hoe ver wordt teruggekeken om te weten welke modi deze installatie kent.
+KNOWN_MODE_DAYS = 30
+MAX_MODE_ENTITIES = 20
+
+
+def known_modes(store: Store, days: int = KNOWN_MODE_DAYS) -> list[str]:
+    """Welke bedrijfsmodi deze installatie de afgelopen tijd heeft gemeld.
+
+    Nodig om een modus die uit het tijdvenster loopt op nul te kunnen zetten.
+    Zonder dat blijft zijn sensor op de laatst gemeten waarde staan en lijkt
+    de pomp nog steeds te ontdooien terwijl dat al een uur voorbij is.
+    """
+    entity_id = _mode_entity(store)
+    if not entity_id:
+        return []
+    since = iso(utcnow() - timedelta(days=days))
+    rows = store.conn.execute(
+        """SELECT value_text, COUNT(*) AS hits
+           FROM readings
+           WHERE entity_id = ? AND ts >= ? AND value_text IS NOT NULL
+           GROUP BY value_text
+           ORDER BY hits DESC
+           LIMIT ?""",
+        (entity_id, since, MAX_MODE_ENTITIES),
+    ).fetchall()
+    return sorted(str(row["value_text"]) for row in rows)
+
+
 def minutes_per_mode(store: Store, hours: float = 1.0) -> dict[str, float]:
     """Hoeveel minuten de pomp in elke bedrijfsmodus stond.
 
@@ -254,7 +282,10 @@ def build_digest(store: Store) -> list[DigestEntity]:
     modes = minutes_per_mode(store, hours=1.0)
     if modes:
         # Eén entiteit per modus, zodat elk een eigen statistiekreeks krijgt.
-        for mode, minutes in modes.items():
+        # Ook modi die dit uur niet voorkwamen worden gepubliceerd, met nul,
+        # anders blijft hun sensor op de waarde van een vorig uur staan.
+        for mode in sorted(set(known_modes(store)) | set(modes)):
+            minutes = modes.get(mode, 0.0)
             safe = re.sub(r"[^a-z0-9_]+", "_", mode.lower()).strip("_") or "onbekend"
             entities.append(
                 DigestEntity(

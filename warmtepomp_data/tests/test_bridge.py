@@ -18,6 +18,7 @@ from warmtepomp.bridge import (
     QueryRefused,
     build_digest,
     count_compressor_starts,
+    known_modes,
     minutes_per_mode,
     publish_digest,
     run_query,
@@ -337,3 +338,48 @@ async def _wait_until(predicate, timeout: float = 5.0, interval: float = 0.02) -
             return
         await asyncio.sleep(interval)
     raise AssertionError(f"voorwaarde niet gehaald binnen {timeout}s")
+
+
+def test_a_mode_that_left_the_window_is_published_as_zero(pumping_store: Store) -> None:
+    """Een modus die dit uur niet voorkwam moet op nul, niet blijven hangen.
+
+    Gebeurde in het echt: ontdooien liep uit het tijdvenster, maar de sensor
+    bleef op 0,60 minuten staan terwijl verwarmen al op 60 stond. Samen meer
+    dan een uur, dus zichtbaar fout.
+    """
+    now = utcnow()
+    # Alleen nog 'heating' in het laatste uur; 'defrosting' lag daarvoor.
+    pumping_store.add_readings(
+        [Reading.from_state(f"{PREFIX}", "heating", now - timedelta(minutes=5))]
+    )
+    entities = {e.entity_id: e for e in build_digest(pumping_store)}
+    assert "sensor.warmtepomp_minutes_defrosting_1h" in entities
+
+    totals = {
+        e.entity_id: float(e.state)
+        for e in entities.values()
+        if e.entity_id.startswith("sensor.warmtepomp_minutes_")
+    }
+    # De optelsom mag nooit meer dan een uur zijn.
+    assert sum(totals.values()) == pytest.approx(60.0, abs=0.5), totals
+
+
+def test_known_modes_come_from_what_was_actually_measured(pumping_store: Store) -> None:
+    modes = known_modes(pumping_store)
+    assert set(modes) == {"heating", "defrosting", "standby"}
+
+
+def test_known_modes_is_capped(tmp_path) -> None:
+    """Een sensor die onzin meldt mag geen honderden entiteiten opleveren."""
+    from warmtepomp.bridge import MAX_MODE_ENTITIES
+
+    with Store(tmp_path / "wp.sqlite") as store:
+        store.upsert_entity(EntityMeta("sensor.rare_mode", "Modus", device_class="enum"))
+        now = utcnow()
+        store.add_readings(
+            [
+                Reading.from_state("sensor.rare_mode", f"toestand_{i}", now - timedelta(minutes=i))
+                for i in range(60)
+            ]
+        )
+        assert len(known_modes(store)) <= MAX_MODE_ENTITIES

@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.1.1
+
+- Een bedrijfsmodus die uit het tijdvenster liep bleef op zijn laatste waarde
+  staan in plaats van op nul te gaan. Daardoor telde de verdeling op tot meer
+  dan een uur: verwarmen stond op 60 minuten terwijl standby nog 0,6 minuten
+  van een kwartier eerder liet zien. Modi die deze installatie kent worden nu
+  altijd gepubliceerd, met nul als ze dit uur niet voorkwamen.
+
 ## 1.1.0
 
 De database is nu ook bereikbaar voor wie alleen de Home Assistant-API heeft.
