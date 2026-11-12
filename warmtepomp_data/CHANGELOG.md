@@ -2,6 +2,12 @@
 
 ## 1.2.2
 
+- Een onbruikbare waarde in 'Custom Home Assistant URL' legde de hele app
+  plat: bij elke start een onleesbare fout op de WebSocket-URL, en dus geen
+  capture meer. Dit gebeurde in de praktijk doordat een wachtwoordmanager het
+  veld invulde. De app controleert nu op http:// of https://, negeert een
+  onbruikbare waarde met uitleg in het logboek, en gaat door via de
+  Supervisor-verbinding. Vastleggen gaat voor.
 - Het tokenveld is geen wachtwoordveld meer. Dat type was precies wat
   wachtwoordmanagers aantrok: die zagen een inlogformulier en vulden bij elke
   paginalading opnieuw een e-mailadres en wachtwoord in, ook nadat de

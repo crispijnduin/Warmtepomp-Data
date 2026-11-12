@@ -155,3 +155,24 @@ def test_the_run_script_falls_back_instead_of_dying() -> None:
     # Na afkeuren moet hij leeg zijn, zodat de Supervisor-tak wordt gekozen.
     assert 'CUSTOM_URL=""' in run
     assert "bashio::log.error" in run
+
+
+def test_version_is_the_newest_changelog_entry(addon_config: dict[str, Any]) -> None:
+    """Zonder hoger versienummer biedt Home Assistant de update niet aan.
+
+    Dat is in het echt misgegaan: de code-fix stond in het repo, maar het
+    versienummer was blijven staan, dus de Supervisor haalde de wijziging wel
+    op en zag geen reden hem te installeren. Deze test koppelt de uitgave aan
+    het versienummer, zodat het niet stil mis kan gaan.
+    """
+    changelog = (ADDON_DIR / "CHANGELOG.md").read_text(encoding="utf-8")
+    headings = [
+        line.removeprefix("## ").strip()
+        for line in changelog.splitlines()
+        if line.startswith("## ")
+    ]
+    assert headings, "CHANGELOG.md hoort uitgaven te beschrijven"
+    assert addon_config["version"] == headings[0], (
+        f"config.yaml staat op {addon_config['version']}, maar de bovenste "
+        f"uitgave in CHANGELOG.md is {headings[0]}"
+    )

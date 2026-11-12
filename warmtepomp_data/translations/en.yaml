@@ -56,10 +56,12 @@ configuration:
   ha_url:
     name: Custom Home Assistant URL
     description: >-
-      Normally leave empty. Only set this if the Supervisor connection does not
-      work; a token is then also required.
+      LEAVE THIS EMPTY. The app talks through the Supervisor and does not need
+      it. Watch out for your password manager filling this in. Only use it if
+      the Supervisor connection fails; then enter a full URL starting with
+      http:// or https://, plus a token.
   ha_token:
     name: Custom access token
     description: >-
-      Normally leave empty. Only needed with a custom Home Assistant URL.
-      Create a long-lived token at the bottom of your profile page.
+      LEAVE THIS EMPTY. Only needed with a custom Home Assistant URL. Create a
+      long-lived token at the bottom of your profile page.

@@ -58,10 +58,12 @@ configuration:
   ha_url:
     name: Eigen Home Assistant-URL
     description: >-
-      Normaal leeg laten. Alleen invullen als de verbinding via de Supervisor
-      niet werkt; dan is ook een token nodig.
+      LAAT DIT LEEG. De app praat via de Supervisor en heeft dit niet nodig.
+      Let op dat je wachtwoordmanager hier niets invult. Alleen gebruiken als
+      de Supervisor-verbinding niet werkt; vul dan een volledige URL in die
+      met http:// of https:// begint, plus een token.
   ha_token:
     name: Eigen toegangstoken
     description: >-
-      Normaal leeg laten. Alleen nodig bij een eigen Home Assistant-URL. Maak
+      LAAT DIT LEEG. Alleen nodig bij een eigen Home Assistant-URL. Maak dan
       een langlevend token aan onderaan je profielpagina.
