@@ -81,6 +81,22 @@ Het antwoord verschijnt binnen een paar seconden in
 Alleen SELECT en WITH worden uitgevoerd; alles wat zou wijzigen wordt geweigerd
 en de reden staat in het attribuut `error`.
 
+## Thermostaten en andere attribuut-sensoren
+
+Bij sommige entiteiten zit de interessante waarde niet in de state maar in een
+attribuut. Een thermostaatzone heeft als state `heat` of `off`; de gemeten
+kamertemperatuur staat in `current_temperature`. Home Assistant bewaart daar
+geen statistiek van, dus die reeks is na de bewaartermijn onherroepelijk weg.
+
+Deze app legt zulke attributen vast als eigen meetreeks, onder de naam
+`climate.woonkamer#current_temperature`. Daarmee staan ze in de export netjes
+als kolom naast de aanvoertemperatuur van de warmtepomp, en zijn ze gewoon met
+SQL te bevragen.
+
+Zet de thermostaat-integratie daarvoor bij **Integraties**, bijvoorbeeld
+`weheat,evohome`. Bij het eerstvolgende starten haalt de backfill ook de
+historie op die Home Assistant nog heeft.
+
 ## Waar staat de data
 
 In `/share/warmtepomp/warmtepomp.sqlite`. Dat is één bestand dat meegaat in de

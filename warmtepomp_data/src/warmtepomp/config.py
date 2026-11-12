@@ -48,6 +48,20 @@ class Config:
     export_dir: Path = Path("data/export")
     # Attributen alleen opslaan als ze wijzigen (anders groeit de database hard).
     store_attributes: bool = True
+    # Numerieke attributen die als eigen meetreeks worden vastgelegd, naast
+    # de ruwe attributen. Nodig voor entiteiten waarvan de interessante waarde
+    # geen state maar een attribuut is: bij een thermostaat is de state
+    # 'heat' en staat de kamertemperatuur in current_temperature. Home
+    # Assistant bewaart daar geen statistiek van, dus zonder dit is die
+    # meetreeks na de bewaartermijn verdwenen.
+    attribute_series: tuple[str, ...] = (
+        "current_temperature",
+        "temperature",
+        "target_temp_high",
+        "target_temp_low",
+        "current_humidity",
+        "humidity",
+    )
 
     # --- Timing (seconden) ---
     snapshot_interval: float = 300.0
@@ -138,6 +152,7 @@ _TUPLE_FIELDS = {
     "extra_entities",
     "exclude_entities",
     "backfill_periods",
+    "attribute_series",
 }
 _BOOL_FIELDS = {"verify_ssl", "store_attributes", "publish_digest", "answer_queries"}
 _PATH_FIELDS = {"db_path", "export_dir"}

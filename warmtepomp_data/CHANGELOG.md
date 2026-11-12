@@ -1,5 +1,26 @@
 # Changelog
 
+## 1.2.0
+
+Meetwaarden die in een attribuut zitten worden nu als eigen reeks vastgelegd.
+
+Aanleiding: een Evohome-thermostaat levert per zone een climate-entiteit
+waarvan de state 'heat' of 'off' is; de kamertemperatuur staat in het
+attribuut `current_temperature`. Home Assistant bewaart daar geen enkele
+statistiek van, dus die reeks verdwijnt na de bewaartermijn volledig.
+
+- `current_temperature`, `temperature` en een paar verwante attributen worden
+  opgeslagen als eigen meetreeks, met eenheid en state_class, zodat ze net als
+  elke sensor te bevragen, te exporteren en uit te zetten zijn tegen de
+  aanvoertemperatuur van de warmtepomp.
+- De backfill haalt deze reeksen met terugwerkende kracht op. Dat vraagt de
+  historie mét attributen op, wat een veel zwaardere vraag is, dus het gebeurt
+  alleen voor de entiteiten die zulke attributen werkelijk hebben.
+- Instelbaar met `attribute_series`; leeg zetten schakelt het uit.
+
+Om een thermostaat mee te nemen moet hij wel bij Integraties staan, bijvoorbeeld
+`weheat,evohome`.
+
 ## 1.1.1
 
 - Een bedrijfsmodus die uit het tijdvenster liep bleef op zijn laatste waarde

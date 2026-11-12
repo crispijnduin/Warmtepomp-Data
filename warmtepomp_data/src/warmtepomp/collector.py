@@ -23,10 +23,20 @@ from typing import Any
 from .bridge import answer_query, publish_digest, query_from_logbook_event
 from .discovery import Discovered, discover
 from .ha_client import HAAuthError, HAClient, HAError
-from .store import Reading, Store
+from .store import EntityMeta, Reading, Store
 from .util import parse_ts, utcnow
 
 _LOG = logging.getLogger(__name__)
+
+# Scheidt een entiteit van het attribuut dat als eigen meetreeks wordt
+# vastgelegd. Een '#' komt niet voor in een echte entity_id, dus de twee zijn
+# altijd uit elkaar te houden.
+ATTRIBUTE_SEPARATOR = "#"
+
+
+def attribute_series_id(entity_id: str, attribute: str) -> str:
+    """De naam waaronder een attribuut als eigen meetreeks wordt opgeslagen."""
+    return f"{entity_id}{ATTRIBUTE_SEPARATOR}{attribute}"
 
 
 @dataclass
@@ -79,6 +89,8 @@ class Collector:
         # vastleggen van meetwaarden nooit ophouden.
         self._queries: asyncio.Queue[str] = asyncio.Queue(maxsize=50)
         self._client: HAClient | None = None
+        # Pseudo-entiteiten waarvan de metadata al is weggeschreven.
+        self._known_series: set[str] = set()
 
     # ------------------------------------------------------------------ public
 
@@ -282,17 +294,63 @@ class Collector:
 
     # ------------------------------------------------------------------ writes
 
+    def _attribute_readings(
+        self, entity_id: str, attrs: dict[str, Any], ts: datetime, source: str
+    ) -> list[Reading]:
+        """Maak losse meetreeksen van de numerieke attributen die we volgen.
+
+        Zo wordt de kamertemperatuur van een thermostaat een gewone meetreeks
+        die net als elke sensor te bevragen, te exporteren en uit te zetten is
+        tegen de aanvoertemperatuur.
+        """
+        from .util import to_float
+
+        out: list[Reading] = []
+        for attribute in self.config.attribute_series:
+            if attribute not in attrs:
+                continue
+            value = to_float(attrs.get(attribute))
+            if value is None:
+                continue
+            series_id = attribute_series_id(entity_id, attribute)
+            if series_id not in self._known_series:
+                self._known_series.add(series_id)
+                friendly = str(attrs.get("friendly_name") or entity_id)
+                unit = attrs.get("temperature_unit") if "temp" in attribute else None
+                if attribute in ("current_humidity", "humidity"):
+                    unit = "%"
+                self.store.upsert_entity(
+                    EntityMeta(
+                        entity_id=series_id,
+                        friendly_name=f"{friendly} ({attribute})",
+                        unit=str(unit) if unit else None,
+                        device_class="temperature" if "temp" in attribute else None,
+                        state_class="measurement",
+                        platform="attribuut",
+                    )
+                )
+            out.append(
+                Reading(
+                    entity_id=series_id,
+                    ts=ts,
+                    value_text=str(attrs.get(attribute)),
+                    value_num=value,
+                    source=source,
+                )
+            )
+        return out
+
     def _write_state(self, state: dict[str, Any], *, source: str) -> int:
         entity_id = str(state.get("entity_id") or "")
         if not entity_id:
             return 0
         ts = parse_ts(state.get("last_updated")) or parse_ts(state.get("last_changed")) or utcnow()
-        written = self.store.add_readings(
-            [Reading.from_state(entity_id, state.get("state"), ts, source=source)]
-        )
+        attrs = dict(state.get("attributes") or {})
+        readings = [Reading.from_state(entity_id, state.get("state"), ts, source=source)]
+        readings.extend(self._attribute_readings(entity_id, attrs, ts, source))
+        written = self.store.add_readings(readings)
         self.stats.readings_written += written
         if self.config.store_attributes:
-            attrs = dict(state.get("attributes") or {})
             # friendly_name en unit staan al in de entities-tabel.
             attrs.pop("friendly_name", None)
             if attrs and self.store.add_attributes(entity_id, ts, attrs):
@@ -310,11 +368,12 @@ class Collector:
                 or parse_ts(state.get("last_changed"))
                 or utcnow()
             )
+            attrs = dict(state.get("attributes") or {})
             readings.append(
                 Reading.from_state(entity_id, state.get("state"), ts, source=source)
             )
+            readings.extend(self._attribute_readings(entity_id, attrs, ts, source))
             if self.config.store_attributes:
-                attrs = dict(state.get("attributes") or {})
                 attrs.pop("friendly_name", None)
                 if attrs and self.store.add_attributes(entity_id, ts, attrs):
                     self.stats.attribute_writes += 1

@@ -16,7 +16,7 @@ from typing import Any
 
 from .discovery import discover
 from .ha_client import HAClient
-from .store import Reading, Store
+from .store import EntityMeta, Reading, Store
 from .util import parse_ts, utcnow
 
 _LOG = logging.getLogger(__name__)
@@ -84,6 +84,27 @@ async def backfill(
         targets = found.sorted_ids()
     else:
         targets = sorted(set(entity_ids))
+
+    # Entiteiten waarvan de interessante waarde in een attribuut zit, zoals de
+    # kamertemperatuur van een thermostaat. Daarvoor moet de historie mét
+    # attributen worden opgehaald. Dat is een veel zwaardere vraag, dus het
+    # gebeurt alleen voor de entiteiten die het nodig hebben.
+    attribute_targets: set[str] = set()
+    if config.attribute_series:
+        try:
+            for state in await client.get_states():
+                entity_id = str(state.get("entity_id") or "")
+                if entity_id not in targets:
+                    continue
+                attrs = state.get("attributes") or {}
+                if any(name in attrs for name in config.attribute_series):
+                    attribute_targets.add(entity_id)
+        except Exception as exc:  # noqa: BLE001
+            _LOG.warning("Kon niet bepalen welke entiteiten attributen hebben: %s", exc)
+    if attribute_targets:
+        _LOG.info(
+            "  %d entiteiten leveren meetwaarden via attributen", len(attribute_targets)
+        )
     result.entities = len(targets)
     if not targets:
         result.errors.append("geen entiteiten gevonden om te backfillen")
@@ -114,7 +135,21 @@ async def backfill(
         _LOG.info("  %-8s %6d nieuwe rijen", period, rows_for_period)
 
     if include_history:
-        result.reading_rows = await _backfill_history(client, store, targets, start, end, result)
+        plain = [t for t in targets if t not in attribute_targets]
+        result.reading_rows = await _backfill_history(
+            client, store, plain, start, end, result, config=config
+        )
+        if attribute_targets:
+            result.reading_rows += await _backfill_history(
+                client,
+                store,
+                sorted(attribute_targets),
+                start,
+                end,
+                result,
+                config=config,
+                with_attributes=True,
+            )
         _LOG.info("  historie %6d nieuwe meetwaarden", result.reading_rows)
 
     return result
@@ -127,12 +162,31 @@ async def _backfill_history(
     start: datetime,
     end: datetime,
     result: BackfillResult,
+    *,
+    config: Any = None,
+    with_attributes: bool = False,
 ) -> int:
-    """Haal volle-resolutie states op via de REST history-API."""
+    """Haal volle-resolutie states op via de REST history-API.
+
+    Met `with_attributes` komen ook de attributen mee en worden de gevolgde
+    numerieke attributen als eigen meetreeks weggeschreven. Dat levert veel
+    meer data op, dus het gebeurt alleen voor entiteiten die het nodig hebben.
+    """
+    from .util import to_float
+
+    if not targets:
+        return 0
+    series_names: tuple[str, ...] = ()
+    if with_attributes and config is not None:
+        series_names = tuple(config.attribute_series)
+    # Met attributen is elk antwoord veel groter, dus in kleinere happen.
+    chunk_size = 2 if with_attributes else _HISTORY_CHUNK
+
     total = 0
-    for chunk in _chunks(targets, _HISTORY_CHUNK):
+    seen_series: set[str] = set()
+    for chunk in _chunks(targets, chunk_size):
         try:
-            series = await client.history(chunk, start, end)
+            series = await client.history(chunk, start, end, minimal=not with_attributes)
         except Exception as exc:  # noqa: BLE001
             msg = f"historie mislukt voor {chunk[0]}...: {exc}"
             _LOG.warning("%s", msg)
@@ -152,6 +206,42 @@ async def _backfill_history(
                 readings.append(
                     Reading.from_state(entity_id, point.get("state"), ts, source="history")
                 )
+                if not series_names:
+                    continue
+                attrs = point.get("attributes") or {}
+                for name in series_names:
+                    if name not in attrs:
+                        continue
+                    value = to_float(attrs.get(name))
+                    if value is None:
+                        continue
+                    series_id = f"{entity_id}#{name}"
+                    if series_id not in seen_series:
+                        seen_series.add(series_id)
+                        unit = attrs.get("temperature_unit") if "temp" in name else None
+                        if name in ("current_humidity", "humidity"):
+                            unit = "%"
+                        store.upsert_entity(
+                            EntityMeta(
+                                entity_id=series_id,
+                                friendly_name=(
+                                    f"{attrs.get('friendly_name') or entity_id} ({name})"
+                                ),
+                                unit=str(unit) if unit else None,
+                                device_class="temperature" if "temp" in name else None,
+                                state_class="measurement",
+                                platform="attribuut",
+                            )
+                        )
+                    readings.append(
+                        Reading(
+                            entity_id=series_id,
+                            ts=ts,
+                            value_text=str(attrs.get(name)),
+                            value_num=value,
+                            source="history",
+                        )
+                    )
         if readings:
             total += store.add_readings(readings)
     return total

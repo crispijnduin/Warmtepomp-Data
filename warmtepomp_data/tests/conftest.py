@@ -71,6 +71,13 @@ ENTITY_REGISTRY: list[dict[str, Any]] = [
         "device_id": DEVICE_ID,
         "disabled_by": "integration",
     },
+    # Een thermostaatzone zonder apparaat, zoals Evohome die via YAML levert.
+    {
+        "entity_id": "climate.woonkamer",
+        "platform": "evohome",
+        "device_id": None,
+        "original_name": "Woonkamer",
+    },
     # Hoort bij een ander apparaat: niet vastleggen.
     {
         "entity_id": "sensor.keukenboiler_power",
@@ -156,6 +163,16 @@ def initial_states() -> list[dict[str, Any]]:
             unit_of_measurement="°C",
             device_class="temperature",
         ),
+        _state(
+            "climate.woonkamer",
+            "heat",
+            friendly_name="Woonkamer",
+            current_temperature=17.9,
+            temperature=18.0,
+            temperature_unit="°C",
+            preset_mode="temporary",
+            hvac_modes=["heat", "off"],
+        ),
         _state("sensor.keukenboiler_power", "42", friendly_name="Boiler power"),
     ]
 
@@ -220,18 +237,29 @@ class FakeHA:
         if request.headers.get("Authorization") != f"Bearer {TOKEN}":
             return web.json_response({"message": "unauthorized"}, status=401)
         wanted = (request.query.get("filter_entity_id") or "").split(",")
+        # Home Assistant laat de attributen weg zodra minimal_response is
+        # meegegeven; de nep-versie doet dat ook, anders test de backfill
+        # iets anders dan er in het echt gebeurt.
+        minimal = "minimal_response" in request.query
         out: list[list[dict[str, Any]]] = []
         for entity_id in wanted:
             if entity_id not in self.states:
                 continue
-            series = [
-                {
+            series = []
+            for index, offset in enumerate((3, 2, 1)):
+                point: dict[str, Any] = {
                     "entity_id": entity_id,
                     "state": self.states[entity_id]["state"],
                     "last_updated": iso(_BASE - timedelta(hours=offset)),
                 }
-                for offset in (3, 2, 1)
-            ]
+                if not minimal:
+                    attrs = dict(self.states[entity_id].get("attributes") or {})
+                    # Laat de kamertemperatuur per uur oplopen, zodat een test
+                    # kan zien dat de hele reeks is overgenomen.
+                    if "current_temperature" in attrs:
+                        attrs["current_temperature"] = 16.0 + index
+                    point["attributes"] = attrs
+                series.append(point)
             out.append(series)
         return web.json_response(out)
 
@@ -325,11 +353,19 @@ class FakeHA:
 
     # --------------------------------------------------------------- helpers
 
-    async def push_state(self, entity_id: str, state: str, when: datetime | None = None) -> None:
+    async def push_state(
+        self,
+        entity_id: str,
+        state: str,
+        when: datetime | None = None,
+        **attributes: Any,
+    ) -> None:
         """Verander een state en stuur het bijbehorende event naar alle abonnees."""
         when = when or datetime.now(timezone.utc)
         old = self.states.get(entity_id)
         new = dict(old or {"entity_id": entity_id, "attributes": {}})
+        if attributes:
+            new["attributes"] = {**(new.get("attributes") or {}), **attributes}
         new["state"] = state
         new["last_updated"] = iso(when)
         new["last_changed"] = iso(when)
