@@ -226,10 +226,24 @@ gevallen en perioden waarin de verbinding wegviel.
 
 ## Opslaggrootte
 
-Ongeveer 60 bytes per meting. Met 36 entiteiten die elk halve minuut iets
-melden komt dat op ruwweg **1,5 GB per jaar**. Een jaar aan uurstatistieken is
-daarnaast een paar MB. Minder nodig? Zet `store_attributes: false` en verhoog
-`snapshot_interval`.
+Gemeten op een draaiende installatie met 54 reeksen (een Weheat Flint P40 plus
+vijf Evohome-zones):
+
+| | |
+|---|---|
+| Metingen | 265 per uur, 6.350 per dag |
+| Per rij | ~173 bytes, inclusief index |
+| Groei | **ongeveer 0,5 GB per jaar** |
+
+Dat is minder dan je zou denken, om twee redenen: er wordt alleen weggeschreven
+als een waarde verandert, en de meeste sensoren verversen elke twee minuten,
+niet elke seconde. De groei schaalt mee met het aantal entiteiten en hoe vaak
+ze veranderen, dus een snelle energiemeter erbij tikt harder aan dan tien trage
+temperatuursensoren.
+
+Op een gewone Home Assistant-machine is dit geen punt: met 10 GB vrij duurt het
+ruim twintig jaar voor het vol is. Toch minder nodig? Zet
+`store_attributes: false` en verhoog `snapshot_interval`.
 
 ## Ontwikkelen
 
