@@ -1,0 +1,50 @@
+configuration:
+  integrations:
+    name: Integrations
+    description: >-
+      Comma-separated integrations whose entities are captured. For a Weheat
+      heat pump, "weheat" is enough.
+  devices:
+    name: Devices
+    description: >-
+      Additional devices to capture in full, by name or device id. Needed when
+      the heat pump arrives over Modbus, MQTT or another route.
+  extra_entities:
+    name: Extra entities
+    description: >-
+      Entities that belong with the heat pump, such as your own outdoor
+      temperature sensor or the smart meter. Comma-separated.
+  exclude_entities:
+    name: Exclude
+    description: Entities never to capture. Glob patterns are allowed.
+  snapshot_interval:
+    name: Snapshot interval
+    description: >-
+      How often (seconds) the full state is fetched as a safety net for missed
+      changes. 300 is a good value.
+  rediscover_interval:
+    name: Rediscover interval
+    description: How often (seconds) to look for new sensors. 0 disables it.
+  store_attributes:
+    name: Store attributes
+    description: >-
+      Also capture entity attributes, such as the list of possible states.
+      Written only when they change.
+  backfill_days:
+    name: Backfill days
+    description: >-
+      How many days of existing history to import from Home Assistant at
+      startup. 0 disables it.
+  log_level:
+    name: Log level
+    description: How much detail ends up in this app's log.
+  ha_url:
+    name: Custom Home Assistant URL
+    description: >-
+      Normally leave empty. Only set this if the Supervisor connection does not
+      work; a token is then also required.
+  ha_token:
+    name: Custom access token
+    description: >-
+      Normally leave empty. Only needed with a custom Home Assistant URL.
+      Create a long-lived token at the bottom of your profile page.

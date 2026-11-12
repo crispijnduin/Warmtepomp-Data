@@ -30,15 +30,43 @@ bewaard.
 Dit systeem abonneert zich op elke statewijziging en schrijft hem weg in SQLite.
 Eén bestand, zonder server, met SQL te bevragen en als geheel te back-uppen.
 
-## Snel beginnen
+## Installeren in Home Assistant (de makkelijkste weg)
+
+Je hebt geen terminal, netwerkschijf of toegangstoken nodig. Home Assistant kan
+dit repo rechtstreeks installeren.
+
+1. Ga in Home Assistant naar **Instellingen → Add-ons** (op nieuwere versies
+   heet dit **Apps**) en open de **store**.
+2. Klik op het **menu rechtsboven (⋮) → Opslagplaatsen**.
+3. Plak deze URL en klik op **Toevoegen**:
+
+   ```
+   https://github.com/crispijnduin/Warmtepomp-Data
+   ```
+
+4. Sluit het venster. **Warmtepomp Data** staat nu onderaan in de store.
+   Klik erop → **Installeren**.
+5. Zet **Starten bij opstarten** en **Automatisch bijwerken** aan, en klik op
+   **Starten**.
+
+Heb je een Weheat-warmtepomp? Dan hoef je niets in te stellen. Kijk na het
+starten op het tabblad **Logboek**; daar hoort te staan hoeveel entiteiten zijn
+gevonden en hoeveel historie is overgenomen.
+
+De database komt in `/share/warmtepomp/warmtepomp.sqlite` en gaat mee in je
+gewone Home Assistant-back-up.
+
+## Zelf draaien vanaf de opdrachtregel
+
+Alleen nodig als je het buiten Home Assistant wilt gebruiken.
 
 ```bash
 git clone https://github.com/crispijnduin/Warmtepomp-Data.git
-cd Warmtepomp-Data
+cd Warmtepomp-Data/warmtepomp_data
 python3 -m venv .venv && . .venv/bin/activate
 pip install -e .
 
-cp warmtepomp.yaml.example warmtepomp.yaml
+cp ../warmtepomp.yaml.example warmtepomp.yaml
 # Vul ha_url in. Maak een token in Home Assistant: je profielpagina,
 # onderaan, "Langlevende toegangstokens".
 export WARMTEPOMP_HA_TOKEN='...'
@@ -110,31 +138,7 @@ Home Assistant ──REST + recorder-statistiek─┘
   inclusief `unavailable` en onwaarschijnlijke waarden. Opschonen is een keuze
   bij de analyse, niet bij het vastleggen.
 
-## Installeren om te blijven draaien
-
-Drie wegen, afhankelijk van waar je het wilt hebben.
-
-### Als Home Assistant add-on (voor Home Assistant OS)
-
-De eenvoudigste weg als Home Assistant op HAOS draait: geen token nodig, de
-database gaat mee in de gewone Home Assistant-back-up.
-
-Home Assistant verwacht `config.yaml` en `Dockerfile` in de hoofdmap van de
-add-on, dus die worden daar naartoe gekopieerd. De rest blijft staan.
-
-```bash
-# Op de Home Assistant-machine, in de map /addons
-# (bereikbaar via de add-ons "Samba share" of "Advanced SSH & Web Terminal"):
-git clone https://github.com/crispijnduin/Warmtepomp-Data.git warmtepomp-data
-cd warmtepomp-data
-cp deploy/addon/config.yaml deploy/addon/Dockerfile .
-```
-
-Daarna in Home Assistant: **Instellingen → Add-ons → Add-on store →
-(rechtsboven) Opslagplaatsen vernieuwen → Lokale add-ons → Warmtepomp Data →
-Installeren**. De database komt in `/share/warmtepomp/warmtepomp.sqlite` en gaat
-mee in de gewone Home Assistant-back-up. Een token is niet nodig: de add-on
-gebruikt de Supervisor-verbinding.
+## Andere manieren om het te laten draaien
 
 ### Met Docker
 
@@ -208,15 +212,31 @@ daarnaast een paar MB. Minder nodig? Zet `store_attributes: false` en verhoog
 ## Ontwikkelen
 
 ```bash
+cd warmtepomp_data
 pip install -e '.[dev]'
-pytest                    # 65 tests, waaronder een nep-Home Assistant
+pytest                    # 75 tests, waaronder een nep-Home Assistant
 ```
 
 De tests draaien een echte WebSocket-server die Home Assistant naspeelt, zodat
 herverbinden, gemiste events en nieuwe sensoren werkelijk worden uitgeprobeerd
 en niet alleen nagebootst. In `tests/data/` staan echte meetreeksen van een
 Flint P40, inclusief de negatieve COP en de te hoge buitentemperatuur, als
-regressietest.
+regressietest. `tests/test_addon_manifest.py` bindt `config.yaml` aan de code,
+zodat een instelling die Home Assistant aanbiedt ook echt iets doet.
+
+## Indeling van dit repo
+
+```
+repository.yaml          <- hierdoor kan Home Assistant dit repo installeren
+warmtepomp_data/         <- de app zelf
+  config.yaml            <- instellingen die Home Assistant aanbiedt
+  Dockerfile             <- hoe de app wordt gebouwd
+  rootfs/                <- het startscript
+  src/warmtepomp/        <- de code
+  tests/
+docs/entiteiten.md       <- alle 36 sensoren met eenheden
+deploy/systemd/          <- draaien buiten Home Assistant
+```
 
 ## Licentie
 

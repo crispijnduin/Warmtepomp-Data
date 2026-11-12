@@ -3,7 +3,9 @@
 #   docker compose up -d
 services:
   warmtepomp:
-    build: .
+    build:
+      context: ./warmtepomp_data
+      dockerfile: Dockerfile.standalone
     image: warmtepomp-data:1.0.0
     container_name: warmtepomp-data
     restart: unless-stopped

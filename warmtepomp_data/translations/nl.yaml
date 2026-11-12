@@ -1,0 +1,52 @@
+configuration:
+  integrations:
+    name: Integraties
+    description: >-
+      Van welke integraties alle entiteiten worden vastgelegd, gescheiden door
+      komma's. Voor een Weheat-warmtepomp is "weheat" genoeg.
+  devices:
+    name: Apparaten
+    description: >-
+      Extra apparaten waarvan alles wordt vastgelegd, op naam of device-id.
+      Nodig als de warmtepomp via Modbus, MQTT of een andere weg binnenkomt.
+  extra_entities:
+    name: Losse entiteiten
+    description: >-
+      Entiteiten die er inhoudelijk bij horen, bijvoorbeeld een eigen
+      buitentemperatuursensor of de slimme meter. Komma's ertussen.
+  exclude_entities:
+    name: Uitsluiten
+    description: Entiteiten die nooit worden vastgelegd. Patronen met * mogen.
+  snapshot_interval:
+    name: Snapshot-interval
+    description: >-
+      Hoe vaak (in seconden) de volledige stand wordt opgehaald als vangnet
+      voor gemiste wijzigingen. 300 is een goede waarde.
+  rediscover_interval:
+    name: Opnieuw zoeken
+    description: >-
+      Hoe vaak (in seconden) wordt gekeken of er nieuwe sensoren zijn
+      bijgekomen. 0 schakelt het uit.
+  store_attributes:
+    name: Attributen bewaren
+    description: >-
+      Ook de attributen van entiteiten vastleggen, zoals de lijst met mogelijke
+      toestanden. Wordt alleen bij een wijziging weggeschreven.
+  backfill_days:
+    name: Historie ophalen
+    description: >-
+      Hoeveel dagen bestaande historie bij het starten uit Home Assistant wordt
+      overgenomen. 0 schakelt het uit.
+  log_level:
+    name: Logniveau
+    description: Hoeveel detail in het logboek van deze app komt.
+  ha_url:
+    name: Eigen Home Assistant-URL
+    description: >-
+      Normaal leeg laten. Alleen invullen als de verbinding via de Supervisor
+      niet werkt; dan is ook een token nodig.
+  ha_token:
+    name: Eigen toegangstoken
+    description: >-
+      Normaal leeg laten. Alleen nodig bij een eigen Home Assistant-URL. Maak
+      een langlevend token aan onderaan je profielpagina.

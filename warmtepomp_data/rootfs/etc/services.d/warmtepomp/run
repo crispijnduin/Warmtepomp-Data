@@ -1,0 +1,42 @@
+#!/usr/bin/with-contenv bashio
+# ==============================================================================
+# Start de warmtepomp-capture.
+# ==============================================================================
+
+# De database staat in /share, zodat hij app-updates overleeft en meegaat in
+# de Home Assistant-back-up.
+DATA_DIR=/share/warmtepomp
+mkdir -p "${DATA_DIR}/export"
+export WARMTEPOMP_DB_PATH="${DATA_DIR}/warmtepomp.sqlite"
+export WARMTEPOMP_EXPORT_DIR="${DATA_DIR}/export"
+
+# Standaard loopt alles via de Supervisor-proxy: geen eigen token nodig.
+# Heeft de gebruiker zelf een URL en token ingevuld, dan winnen die; dat is de
+# uitwijk als de proxy onverhoopt niet werkt.
+if bashio::config.has_value 'ha_url'; then
+    bashio::log.info "Eigen Home Assistant-URL ingesteld; Supervisor-proxy wordt niet gebruikt."
+    export WARMTEPOMP_HA_URL="$(bashio::config 'ha_url')"
+    export WARMTEPOMP_HA_WS_URL=""
+    if bashio::config.has_value 'ha_token'; then
+        export WARMTEPOMP_HA_TOKEN="$(bashio::config 'ha_token')"
+    else
+        bashio::exit.nok "Met een eigen ha_url is ook een ha_token nodig."
+    fi
+else
+    export WARMTEPOMP_HA_URL="http://supervisor/core"
+    export WARMTEPOMP_HA_WS_URL="ws://supervisor/core/websocket"
+    if ! bashio::var.has_value "${SUPERVISOR_TOKEN:-}"; then
+        bashio::exit.nok "SUPERVISOR_TOKEN ontbreekt; is homeassistant_api ingeschakeld?"
+    fi
+    export WARMTEPOMP_HA_TOKEN="${SUPERVISOR_TOKEN}"
+fi
+
+# De tijdzone van Home Assistant overnemen, zodat dagen goed worden afgebakend.
+if bashio::var.has_value "${TZ:-}"; then
+    export WARMTEPOMP_TIMEZONE="${TZ}"
+fi
+
+bashio::log.info "Warmtepomp Data start; database: ${WARMTEPOMP_DB_PATH}"
+
+# De overige instellingen staan in /data/options.json, dat de app zelf leest.
+exec warmtepomp --config /data/options.json run

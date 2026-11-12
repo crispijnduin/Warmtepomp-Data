@@ -11,9 +11,9 @@ dist/
 warmtepomp.yaml
 
 # Vastgelegde data: hoort in een back-up, niet in git
-data/*.sqlite
-data/*.sqlite-wal
-data/*.sqlite-shm
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
 data/export/
 
 # Test- en editor-rommel

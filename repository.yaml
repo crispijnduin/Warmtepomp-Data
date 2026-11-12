@@ -1,0 +1,6 @@
+# Home Assistant app-repository.
+# Toevoegen in Home Assistant onder Instellingen, bij de app- of add-on-store:
+# menu rechtsboven, Opslagplaatsen, en dan de URL van dit repo plakken.
+name: Warmtepomp Data
+url: 'https://github.com/crispijnduin/Warmtepomp-Data'
+maintainer: crispijnduin <https://github.com/crispijnduin>

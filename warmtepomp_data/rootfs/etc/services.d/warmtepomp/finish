@@ -1,0 +1,15 @@
+#!/usr/bin/env bashio
+# ==============================================================================
+# Stopt de s6-boom als de capture met een fout eindigt, zodat een verkeerd
+# ingestelde app duidelijk faalt in plaats van eindeloos te herstarten.
+# ==============================================================================
+
+declare APP_EXIT_CODE=${1}
+
+if [[ "${APP_EXIT_CODE}" -ne 0 ]] && [[ "${APP_EXIT_CODE}" -ne 256 ]]; then
+    bashio::log.warning "Warmtepomp Data gestopt met code ${APP_EXIT_CODE}"
+    echo "${APP_EXIT_CODE}" > /run/s6-linux-init-container-results/exitcode
+    exec /run/s6/basedir/bin/halt
+fi
+
+bashio::log.info "Warmtepomp Data wordt opnieuw gestart"
