@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "warmtepomp-data"
-version = "1.0.0"
+version = "1.1.0"
 description = "Vastleggen van alle beschikbare data van een (Weheat) warmtepomp via Home Assistant"
 readme = "README.md"
 requires-python = ">=3.11"

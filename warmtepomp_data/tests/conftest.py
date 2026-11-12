@@ -168,12 +168,15 @@ class FakeHA:
         self.app.router.add_get("/api/websocket", self._websocket)
         self.app.router.add_get("/api/config", self._config)
         self.app.router.add_get("/api/history/period/{start}", self._history)
+        self.app.router.add_post("/api/states/{entity_id}", self._set_state)
         self.states: dict[str, dict[str, Any]] = {
             s["entity_id"]: s for s in initial_states()
         }
         self.sockets: list[web.WebSocketResponse] = []
         self.subscriptions: list[tuple[web.WebSocketResponse, int]] = []
+        self.event_subscriptions: list[tuple[web.WebSocketResponse, int, str]] = []
         self.commands: list[str] = []
+        self.posted: dict[str, dict[str, Any]] = {}
         self.reject_auth = False
         self.statistics: dict[str, list[dict[str, Any]]] = {}
         self._runner: web.AppRunner | None = None
@@ -232,6 +235,21 @@ class FakeHA:
             out.append(series)
         return web.json_response(out)
 
+    async def _set_state(self, request: web.Request) -> web.Response:
+        """Neemt entiteiten aan die de app zelf publiceert."""
+        if request.headers.get("Authorization") != f"Bearer {TOKEN}":
+            return web.json_response({"message": "unauthorized"}, status=401)
+        entity_id = request.match_info["entity_id"]
+        body = await request.json()
+        record = {
+            "entity_id": entity_id,
+            "state": body.get("state"),
+            "attributes": body.get("attributes") or {},
+        }
+        self.posted[entity_id] = record
+        self.states[entity_id] = {**record, "last_updated": iso(datetime.now(timezone.utc))}
+        return web.json_response(record, status=201)
+
     async def _websocket(self, request: web.Request) -> web.WebSocketResponse:
         ws = web.WebSocketResponse()
         await ws.prepare(request)
@@ -262,7 +280,10 @@ class FakeHA:
         elif kind == "config/device_registry/list":
             await self._ok(ws, msg_id, DEVICE_REGISTRY)
         elif kind == "subscribe_events":
-            self.subscriptions.append((ws, int(msg_id)))
+            event_type = str(data.get("event_type") or "state_changed")
+            self.event_subscriptions.append((ws, int(msg_id), event_type))
+            if event_type == "state_changed":
+                self.subscriptions.append((ws, int(msg_id)))
             await self._ok(ws, msg_id, None)
         elif kind == "recorder/statistics_during_period":
             wanted = data.get("statistic_ids") or []
@@ -327,9 +348,26 @@ class FakeHA:
                 }
             )
 
+    async def fire_logbook_entry(self, name: str, message: str) -> None:
+        """Bootst 'logbook.log' na: vuurt een logbook_entry op de eventbus."""
+        for ws, sub_id, event_type in list(self.event_subscriptions):
+            if event_type != "logbook_entry" or ws.closed:
+                continue
+            await ws.send_json(
+                {
+                    "id": sub_id,
+                    "type": "event",
+                    "event": {
+                        "event_type": "logbook_entry",
+                        "data": {"name": name, "message": message},
+                    },
+                }
+            )
+
     async def drop_connections(self) -> None:
         """Verbreek alle WebSockets, om herverbinden te testen."""
         self.subscriptions.clear()
+        self.event_subscriptions.clear()
         for ws in list(self.sockets):
             if not ws.closed:
                 await ws.close(code=1001, message=b"bye")

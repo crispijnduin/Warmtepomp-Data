@@ -154,6 +154,28 @@ Zie de instructies boven in
 [`deploy/systemd/warmtepomp.service`](deploy/systemd/warmtepomp.service). De
 bijgeleverde timer exporteert elke nacht naar CSV.
 
+## De data opvragen vanuit Home Assistant
+
+Draait het als app, dan is de database bereikbaar zonder terminal.
+
+De app publiceert zelf terug wat Home Assistant niet kan bewaren —
+`sensor.warmtepomp_compressor_starts_1h` (pendelt de pomp?), de minuten per
+bedrijfsmodus, en de staat van de capture. Die krijgen een `state_class`, dus
+de recorder bewaart ze als langetermijnstatistiek en ze blijven jaren
+opvraagbaar.
+
+Een eigen vraag stel je met de actie `logbook.log`:
+
+```yaml
+action: logbook.log
+data:
+  name: warmtepomp-query
+  message: SELECT COUNT(*) FROM readings
+```
+
+Het antwoord komt in `sensor.warmtepomp_query_result`, met de rijen in de
+attributen. Alleen SELECT en WITH worden uitgevoerd.
+
 ## De data gebruiken
 
 Direct met SQL:
@@ -214,7 +236,7 @@ daarnaast een paar MB. Minder nodig? Zet `store_attributes: false` en verhoog
 ```bash
 cd warmtepomp_data
 pip install -e '.[dev]'
-pytest                    # 75 tests, waaronder een nep-Home Assistant
+pytest                    # 99 tests, waaronder een nep-Home Assistant
 ```
 
 De tests draaien een echte WebSocket-server die Home Assistant naspeelt, zodat

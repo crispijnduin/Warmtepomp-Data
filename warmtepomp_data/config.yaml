@@ -1,6 +1,6 @@
 ---
 name: Warmtepomp Data
-version: "1.0.0"
+version: "1.1.0"
 slug: warmtepomp_data
 description: Legt alle beschikbare data van de warmtepomp vast in een eigen database
 url: 'https://github.com/crispijnduin/Warmtepomp-Data/tree/main/warmtepomp_data'
@@ -25,6 +25,9 @@ options:
   rediscover_interval: 3600
   store_attributes: true
   backfill_days: 400
+  publish_digest: true
+  digest_interval: 300
+  answer_queries: true
   log_level: INFO
   ha_url: ""
   ha_token: ""
@@ -37,6 +40,9 @@ schema:
   rediscover_interval: int(0,86400)
   store_attributes: bool
   backfill_days: int(0,3650)
+  publish_digest: bool
+  digest_interval: int(60,86400)
+  answer_queries: bool
   log_level: list(DEBUG|INFO|WARNING|ERROR)
   ha_url: str?
   ha_token: password?

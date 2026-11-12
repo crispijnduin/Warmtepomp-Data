@@ -58,6 +58,16 @@ class Config:
     # Een stilte langer dan dit markeert een gat in de data.
     stale_after: float = 900.0
 
+    # --- Brug naar Home Assistant ---
+    # Publiceer afgeleiden die Home Assistant zelf niet bewaart (pendelen,
+    # tijd per bedrijfsmodus) terug als entiteiten, zodat ze als
+    # langetermijnstatistiek bewaard blijven en opvraagbaar zijn via de API.
+    publish_digest: bool = True
+    digest_interval: float = 300.0
+    # Beantwoord leesvragen die via logbook.log binnenkomen.
+    answer_queries: bool = True
+    query_marker: str = "warmtepomp-query"
+
     # --- Backfill ---
     backfill_periods: tuple[str, ...] = ("5minute", "hour", "day", "month")
     backfill_days: int = 400
@@ -129,7 +139,7 @@ _TUPLE_FIELDS = {
     "exclude_entities",
     "backfill_periods",
 }
-_BOOL_FIELDS = {"verify_ssl", "store_attributes"}
+_BOOL_FIELDS = {"verify_ssl", "store_attributes", "publish_digest", "answer_queries"}
 _PATH_FIELDS = {"db_path", "export_dir"}
 _FLOAT_FIELDS = {
     "snapshot_interval",
@@ -138,6 +148,7 @@ _FLOAT_FIELDS = {
     "reconnect_max_delay",
     "ws_timeout",
     "stale_after",
+    "digest_interval",
 }
 _INT_FIELDS = {"backfill_days"}
 

@@ -217,10 +217,10 @@ class HAClient:
             self._pending.pop(msg_id, None)
             raise
 
-    async def subscribe_state_changed(
-        self, handler: Callable[[dict[str, Any]], None]
+    async def subscribe_events(
+        self, event_type: str, handler: Callable[[dict[str, Any]], None]
     ) -> int:
-        """Abonneer op alle state_changed-events. Geeft het subscription-id."""
+        """Abonneer op een event-type. Geeft het subscription-id."""
         ws = self._ws
         if ws is None or ws.closed:
             raise HAError("niet verbonden met Home Assistant")
@@ -233,7 +233,7 @@ class HAClient:
         self._subscriptions[msg_id] = handler
         try:
             await ws.send_json(
-                {"id": msg_id, "type": "subscribe_events", "event_type": "state_changed"}
+                {"id": msg_id, "type": "subscribe_events", "event_type": event_type}
             )
             await asyncio.wait_for(future, self._timeout)
         except Exception:
@@ -241,6 +241,12 @@ class HAClient:
             self._pending.pop(msg_id, None)
             raise
         return msg_id
+
+    async def subscribe_state_changed(
+        self, handler: Callable[[dict[str, Any]], None]
+    ) -> int:
+        """Abonneer op alle state_changed-events."""
+        return await self.subscribe_events("state_changed", handler)
 
     # ----------------------------------------------------------- registries
 
@@ -296,6 +302,50 @@ class HAClient:
                 body = (await resp.text())[:400]
                 raise HAError(f"GET {path} gaf {resp.status}: {body}")
             return await resp.json()
+
+    async def rest_post(self, path: str, payload: dict[str, Any]) -> Any:
+        """POST op de REST-API. `path` is relatief aan /api."""
+        url = f"{self.rest_url}/{path.lstrip('/')}"
+        kwargs: dict[str, Any] = {}
+        if not self._verify_ssl:
+            kwargs["ssl"] = False
+        async with self.session.post(
+            url,
+            json=payload,
+            headers={"Authorization": f"Bearer {self._token}"},
+            **kwargs,
+        ) as resp:
+            if resp.status == 401:
+                raise HAAuthError("REST-API weigert het token (401)")
+            if resp.status >= 400:
+                body = (await resp.text())[:400]
+                raise HAError(f"POST {path} gaf {resp.status}: {body}")
+            if resp.content_type == "application/json":
+                return await resp.json()
+            return await resp.text()
+
+    async def set_state(
+        self,
+        entity_id: str,
+        state: str,
+        attributes: dict[str, Any] | None = None,
+    ) -> Any:
+        """Zet een entiteit in Home Assistant op een waarde.
+
+        Hiermee publiceert de app zijn eigen bevindingen terug naar Home
+        Assistant. Een entiteit met een state_class wordt door de recorder als
+        langetermijnstatistiek bewaard, ook al hoort hij bij geen enkele
+        integratie. Zo blijven afgeleide cijfers bewaard nadat Home Assistant
+        de losse metingen allang heeft opgeruimd.
+
+        Let op: zulke entiteiten verdwijnen als Home Assistant herstart; de app
+        zet ze er bij de volgende ronde weer neer. De opgebouwde statistiek
+        blijft wel staan.
+        """
+        payload: dict[str, Any] = {"state": state}
+        if attributes:
+            payload["attributes"] = attributes
+        return await self.rest_post(f"states/{entity_id}", payload)
 
     async def history(
         self,

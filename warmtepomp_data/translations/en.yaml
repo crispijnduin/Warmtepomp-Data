@@ -35,6 +35,21 @@ configuration:
     description: >-
       How many days of existing history to import from Home Assistant at
       startup. 0 disables it.
+  publish_digest:
+    name: Publish digest
+    description: >-
+      Publish derived figures Home Assistant cannot keep itself back as
+      sensors: how often the compressor starts and how many minutes the pump
+      spent in each operating mode. These are then kept as statistics.
+  digest_interval:
+    name: Digest interval
+    description: How often (seconds) that digest is refreshed.
+  answer_queries:
+    name: Answer queries
+    description: >-
+      Allow a read-only query to be asked of the database through logbook.log;
+      the answer appears in sensor.warmtepomp_query_result. Only SELECT
+      statements are executed.
   log_level:
     name: Log level
     description: How much detail ends up in this app's log.

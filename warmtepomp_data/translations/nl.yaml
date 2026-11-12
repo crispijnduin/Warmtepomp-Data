@@ -37,6 +37,21 @@ configuration:
     description: >-
       Hoeveel dagen bestaande historie bij het starten uit Home Assistant wordt
       overgenomen. 0 schakelt het uit.
+  publish_digest:
+    name: Samenvatting terugsturen
+    description: >-
+      Publiceer afgeleide cijfers die Home Assistant zelf niet bewaart terug
+      als sensoren: hoe vaak de compressor aanslaat en hoeveel minuten de pomp
+      in elke bedrijfsmodus stond. Die blijven dan als statistiek bewaard.
+  digest_interval:
+    name: Hoe vaak terugsturen
+    description: Om de hoeveel seconden die samenvatting wordt bijgewerkt.
+  answer_queries:
+    name: Vragen beantwoorden
+    description: >-
+      Sta toe dat er via logbook.log een leesvraag aan de database wordt
+      gesteld; het antwoord komt terug in sensor.warmtepomp_query_result.
+      Alleen SELECT-vragen worden uitgevoerd.
   log_level:
     name: Logniveau
     description: Hoeveel detail in het logboek van deze app komt.

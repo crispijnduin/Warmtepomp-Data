@@ -20,6 +20,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any
 
+from .bridge import answer_query, publish_digest, query_from_logbook_event
 from .discovery import Discovered, discover
 from .ha_client import HAAuthError, HAClient, HAError
 from .store import Reading, Store
@@ -37,6 +38,8 @@ class CollectorStats:
     snapshots: int = 0
     reconnects: int = 0
     attribute_writes: int = 0
+    digests_published: int = 0
+    queries_answered: int = 0
     last_event_at: datetime | None = None
     last_error: str | None = None
     entities: int = 0
@@ -49,6 +52,8 @@ class CollectorStats:
             "snapshots": self.snapshots,
             "reconnects": self.reconnects,
             "attribute_writes": self.attribute_writes,
+            "digests_published": self.digests_published,
+            "queries_answered": self.queries_answered,
             "entities": self.entities,
             "last_event_at": self.last_event_at.isoformat() if self.last_event_at else None,
             "last_error": self.last_error,
@@ -70,6 +75,10 @@ class Collector:
         # queue naar één consumer, zodat de WebSocket-reader nooit blokkeert.
         self._queue: asyncio.Queue[tuple[str, Any]] = asyncio.Queue(maxsize=10_000)
         self._dropped = 0
+        # Vragen lopen via een eigen queue: een trage query mag het
+        # vastleggen van meetwaarden nooit ophouden.
+        self._queries: asyncio.Queue[str] = asyncio.Queue(maxsize=50)
+        self._client: HAClient | None = None
 
     # ------------------------------------------------------------------ public
 
@@ -144,6 +153,10 @@ class Collector:
         """Eén geslaagde verbinding: discover, snapshot, abonneer, wacht."""
         await self._rediscover(client)
         await client.subscribe_state_changed(self._on_state_changed)
+        if self.config.answer_queries:
+            # Via logbook.log kan iedereen met API-toegang een leesvraag aan
+            # de database stellen; het antwoord komt terug als entiteit.
+            await client.subscribe_events("logbook_entry", self._on_logbook_entry)
         await self._snapshot(client)
 
         writer = asyncio.create_task(self._writer_loop(), name="wp-writer")
@@ -157,6 +170,20 @@ class Collector:
         )
         stopper = asyncio.create_task(self._stop.wait(), name="wp-stop")
         tasks = [writer, snapshotter, rediscoverer, stopper]
+        if self.config.publish_digest:
+            # Meteen één keer publiceren, zodat de entiteiten er direct staan.
+            await self._publish_digest(client)
+            tasks.append(
+                asyncio.create_task(
+                    self._periodic(
+                        self.config.digest_interval, lambda: self._publish_digest(client)
+                    ),
+                    name="wp-digest",
+                )
+            )
+        self._client = client
+        queries = asyncio.create_task(self._query_loop(), name="wp-queries")
+        tasks.append(queries)
         try:
             done, _ = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
             for task in done:
@@ -188,6 +215,39 @@ class Collector:
                     "Schrijf-queue vol, %d events laten vallen; de snapshot vangt dit op",
                     self._dropped,
                 )
+
+    def _on_logbook_entry(self, event: dict[str, Any]) -> None:
+        """Callback: een logboekregel kan een leesvraag zijn."""
+        sql = query_from_logbook_event(event, self.config.query_marker)
+        if not sql:
+            return
+        try:
+            self._queries.put_nowait(sql)
+        except asyncio.QueueFull:
+            _LOG.warning("Te veel openstaande vragen; deze is overgeslagen")
+
+    async def _query_loop(self) -> None:
+        """Beantwoord binnengekomen vragen, één voor één."""
+        while True:
+            sql = await self._queries.get()
+            try:
+                if self._client is None:
+                    continue
+                await answer_query(self._client, self.store, sql)
+                self.stats.queries_answered += 1
+            except Exception:  # noqa: BLE001
+                _LOG.exception("Kon vraag niet beantwoorden")
+            finally:
+                self._queries.task_done()
+
+    async def _publish_digest(self, client: HAClient) -> None:
+        """Zet de afgeleide cijfers in Home Assistant."""
+        try:
+            count = await publish_digest(client, self.store)
+            self.stats.digests_published += count
+        except Exception:  # noqa: BLE001
+            # De samenvatting is bijzaak; het vastleggen gaat voor.
+            _LOG.exception("Kon de samenvatting niet publiceren")
 
     async def _writer_loop(self) -> None:
         """Consumeer de queue en schrijf naar de database."""

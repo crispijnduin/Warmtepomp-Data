@@ -1,5 +1,22 @@
 # Changelog
 
+## 1.1.0
+
+De database is nu ook bereikbaar voor wie alleen de Home Assistant-API heeft.
+
+- **Samenvatting terug naar Home Assistant.** Elke vijf minuten worden cijfers
+  gepubliceerd die Home Assistant zelf niet kan bewaren: hoe vaak de compressor
+  aanslaat (pendelen) en hoeveel minuten de pomp in elke bedrijfsmodus stond.
+  Omdat ze een state_class krijgen, bewaart de recorder ze als
+  langetermijnstatistiek en blijven ze jaren opvraagbaar.
+- **Vragen stellen via het logboek.** Een aanroep van `logbook.log` met de naam
+  `warmtepomp-query` en een SELECT als bericht voert die vraag uit tegen de
+  database; het antwoord verschijnt in `sensor.warmtepomp_query_result`. Alleen
+  lezen is toegestaan.
+- Twee telfouten verholpen die bij het bouwen hiervan aan het licht kwamen: een
+  compressor die bij het begin van het uur al draaide telde als nieuwe start, en
+  een bedrijfsmodus die al langer ongewijzigd was telde helemaal niet mee.
+
 ## 1.0.0
 
 Eerste versie.

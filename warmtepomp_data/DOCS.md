@@ -43,6 +43,44 @@ Supervisor met Home Assistant en heeft geen token nodig. Werkt dat onverhoopt
 niet, vul dan beide in: de URL van Home Assistant en een langlevend token dat je
 onderaan je profielpagina aanmaakt.
 
+## De data opvragen zonder terminal
+
+De database staat in de container, maar de inhoud is bereikbaar via de gewone
+Home Assistant-API. Twee wegen.
+
+**Samenvatting als sensoren.** De app publiceert elke vijf minuten wat Home
+Assistant zelf niet bewaart:
+
+| Sensor | Wat het zegt |
+|---|---|
+| `sensor.warmtepomp_compressor_starts_1h` | hoe vaak de compressor aansloeg; hoog betekent pendelen |
+| `sensor.warmtepomp_minutes_heating_1h` | minuten verwarmen in het afgelopen uur |
+| `sensor.warmtepomp_minutes_defrosting_1h` | minuten ontdooien |
+| `sensor.warmtepomp_minutes_standby_1h` | minuten stilstand |
+| `sensor.warmtepomp_mode_last_hour` | de hoofdmodus, met de hele verdeling als attribuut |
+| `sensor.warmtepomp_capture_readings` | hoeveel er is vastgelegd en hoe vers het is |
+
+Deze krijgen een state_class, dus de recorder bewaart ze als
+langetermijnstatistiek. Over een jaar zijn ze nog opvraagbaar, ook al zijn de
+losse metingen waaruit ze zijn berekend dan allang opgeruimd.
+
+**Zelf een vraag stellen.** Roep de actie `logbook.log` aan met de naam
+`warmtepomp-query` en een SELECT als bericht:
+
+```yaml
+action: logbook.log
+data:
+  name: warmtepomp-query
+  message: >-
+    SELECT substr(ts,1,10) AS dag, COUNT(*) AS metingen
+    FROM readings GROUP BY dag ORDER BY dag DESC
+```
+
+Het antwoord verschijnt binnen een paar seconden in
+`sensor.warmtepomp_query_result`: de kolommen en rijen staan in de attributen.
+Alleen SELECT en WITH worden uitgevoerd; alles wat zou wijzigen wordt geweigerd
+en de reden staat in het attribuut `error`.
+
 ## Waar staat de data
 
 In `/share/warmtepomp/warmtepomp.sqlite`. Dat is één bestand dat meegaat in de
