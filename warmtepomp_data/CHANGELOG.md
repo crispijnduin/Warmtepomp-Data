@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.2.2
+
+- Het tokenveld is geen wachtwoordveld meer. Dat type was precies wat
+  wachtwoordmanagers aantrok: die zagen een inlogformulier en vulden bij elke
+  paginalading opnieuw een e-mailadres en wachtwoord in, ook nadat de
+  gebruiker de velden had leeggemaakt. Als gewoon tekstveld gebeurt dat niet.
+  Het veld hoort leeg te blijven, dus er valt niets te verbergen.
+
 ## 1.2.0
 
 Meetwaarden die in een attribuut zitten worden nu als eigen reeks vastgelegd.

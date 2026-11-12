@@ -45,4 +45,4 @@ schema:
   answer_queries: bool
   log_level: list(DEBUG|INFO|WARNING|ERROR)
   ha_url: str?
-  ha_token: password?
+  ha_token: str?
