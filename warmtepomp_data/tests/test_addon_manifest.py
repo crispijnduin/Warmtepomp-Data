@@ -15,7 +15,7 @@ from typing import Any
 import pytest
 import yaml
 
-from warmtepomp.config import Config, load_config
+from warmtepomp.config import Config, ConfigError, load_config
 
 ADDON_DIR = Path(__file__).resolve().parents[1]
 REPO_ROOT = ADDON_DIR.parent
@@ -133,3 +133,25 @@ def test_version_matches_the_package() -> None:
         "Home Assistant biedt een update aan op basis van het versienummer in "
         "config.yaml; dat moet meelopen met het pakket."
     )
+
+
+def test_a_nonsense_url_is_refused_with_a_readable_message() -> None:
+    """Een wachtwoordmanager vult dit veld soms met een e-mailadres.
+
+    Dat liep in het echt uit op een onleesbare InvalidUrlClientError diep in
+    de HTTP-client, waarna de app bij elke start opnieuw omviel en er dus
+    niets meer werd vastgelegd.
+    """
+    with pytest.raises(ConfigError, match="http://"):
+        Config(ha_url="iemand@example.com", ha_token="t")
+    with pytest.raises(ConfigError, match="ha_ws_url"):
+        Config(ha_url="http://ha.local:8123", ha_token="t", ha_ws_url="ha.local/ws")
+
+
+def test_the_run_script_falls_back_instead_of_dying() -> None:
+    """Een onbruikbare eigen URL mag de capture niet platleggen."""
+    run = (ADDON_DIR / "rootfs/etc/services.d/warmtepomp/run").read_text(encoding="utf-8")
+    assert "http://*|https://*" in run, "de URL hoort op een schema gecontroleerd te worden"
+    # Na afkeuren moet hij leeg zijn, zodat de Supervisor-tak wordt gekozen.
+    assert 'CUSTOM_URL=""' in run
+    assert "bashio::log.error" in run

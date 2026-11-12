@@ -13,9 +13,29 @@ export WARMTEPOMP_EXPORT_DIR="${DATA_DIR}/export"
 # Standaard loopt alles via de Supervisor-proxy: geen eigen token nodig.
 # Heeft de gebruiker zelf een URL en token ingevuld, dan winnen die; dat is de
 # uitwijk als de proxy onverhoopt niet werkt.
+CUSTOM_URL=""
 if bashio::config.has_value 'ha_url'; then
+    CUSTOM_URL="$(bashio::config 'ha_url')"
+    case "${CUSTOM_URL}" in
+        http://*|https://*) ;;
+        *)
+            # Een wachtwoordmanager vult dit veld soms met een e-mailadres.
+            # Daar mag de capture niet op stuklopen: liever doorgaan via de
+            # Supervisor dan helemaal geen data vastleggen.
+            bashio::log.error \
+                "Eigen Home Assistant-URL '${CUSTOM_URL}' begint niet met http:// of https://."
+            bashio::log.error \
+                "Deze wordt genegeerd; de Supervisor-verbinding wordt gebruikt."
+            bashio::log.error \
+                "Maak de velden 'Custom Home Assistant URL' en 'Custom access token' leeg."
+            CUSTOM_URL=""
+            ;;
+    esac
+fi
+
+if bashio::var.has_value "${CUSTOM_URL}"; then
     bashio::log.info "Eigen Home Assistant-URL ingesteld; Supervisor-proxy wordt niet gebruikt."
-    export WARMTEPOMP_HA_URL="$(bashio::config 'ha_url')"
+    export WARMTEPOMP_HA_URL="${CUSTOM_URL}"
     export WARMTEPOMP_HA_WS_URL=""
     if bashio::config.has_value 'ha_token'; then
         export WARMTEPOMP_HA_TOKEN="$(bashio::config 'ha_token')"

@@ -97,6 +97,18 @@ class Config:
     def __post_init__(self) -> None:
         if not self.ha_url:
             raise ConfigError("ha_url ontbreekt")
+        if not self.ha_url.startswith(("http://", "https://")):
+            # Komt in de praktijk voor doordat een wachtwoordmanager het veld
+            # invult met een e-mailadres. Zonder deze controle struikelt de
+            # HTTP-client er pas veel later over, met een onleesbare fout.
+            raise ConfigError(
+                f"ha_url moet met http:// of https:// beginnen, maar is {self.ha_url!r}. "
+                "Laat het veld leeg om de Supervisor-verbinding te gebruiken."
+            )
+        if self.ha_ws_url and not self.ha_ws_url.startswith(("ws://", "wss://")):
+            raise ConfigError(
+                f"ha_ws_url moet met ws:// of wss:// beginnen, maar is {self.ha_ws_url!r}"
+            )
         if not self.integrations and not self.devices and not self.extra_entities:
             raise ConfigError(
                 "Geef minstens één van integrations, devices of extra_entities op, "
