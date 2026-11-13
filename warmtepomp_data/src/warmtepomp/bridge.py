@@ -49,8 +49,14 @@ RUNNING_WATTS = 100.0
 MAX_RESULT_ROWS = 200
 MAX_RESULT_CHARS = 14000
 
+# 'replace' staat hier niet als los woord. REPLACE() is in SQLite ook een
+# gewone tekstfunctie, en die weigeren maakte onschuldige leesvragen
+# onmogelijk: SELECT replace(entity_id, 'sensor.', '') kwam niet door de
+# controle. Geweerd wordt alleen de schrijfvorm REPLACE INTO; INSERT OR
+# REPLACE ketst al op 'insert' af.
 _FORBIDDEN = re.compile(
-    r"\b(insert|update|delete|drop|alter|create|replace|attach|detach|pragma|vacuum)\b",
+    r"\b(insert|update|delete|drop|alter|create|attach|detach|pragma|vacuum)\b"
+    r"|\breplace\s+into\b",
     re.IGNORECASE,
 )
 

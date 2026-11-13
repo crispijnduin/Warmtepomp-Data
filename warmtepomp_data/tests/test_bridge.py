@@ -218,6 +218,7 @@ def test_query_returns_columns_and_rows(pumping_store: Store) -> None:
         "PRAGMA journal_mode=DELETE",
         "ATTACH DATABASE '/etc/passwd' AS p",
         "INSERT INTO readings VALUES ('x','y',1,'z','w')",
+        "REPLACE INTO readings VALUES ('x','y',1,'z','w')",
         "",
     ],
 )
@@ -226,6 +227,25 @@ def test_query_refuses_anything_that_is_not_a_read(pumping_store: Store, sql: st
     with pytest.raises(QueryRefused):
         run_query(pumping_store, sql)
     assert pumping_store.stats()["readings"] == before
+
+
+def test_query_allows_the_replace_text_function(pumping_store: Store) -> None:
+    """REPLACE() bewerkt alleen tekst in het antwoord en hoort gewoon te mogen.
+
+    De verbodslijst keek op het losse woord 'replace', bedoeld tegen REPLACE
+    INTO. Daardoor sneuvelde ook een leesvraag die entiteitsnamen inkort,
+    met een melding over schrijven waar niets geschreven werd.
+    """
+    result = run_query(
+        pumping_store,
+        "SELECT DISTINCT replace(entity_id, 'sensor.', '') AS kort "
+        "FROM readings ORDER BY kort",
+    )
+    assert result["columns"] == ["kort"]
+    assert [row[0] for row in result["rows"]] == [
+        "home_flint_p40_heat_pump",
+        "home_flint_p40_heat_pump_input_power",
+    ]
 
 
 def test_query_truncates_instead_of_flooding(pumping_store: Store) -> None:
