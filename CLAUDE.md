@@ -40,6 +40,22 @@ data:
 Het antwoord verschijnt in de attributen van `sensor.warmtepomp_query_result`.
 Alleen SELECT en WITH worden uitgevoerd.
 
+**Een tijdvenster moet een `T` hebben.** `datetime('now','-48 hours')` levert
+`2026-11-11 15:08:04`, met een spatie, terwijl `readings.ts` een ISO-tijdstempel
+met een `T` is. SQLite vergelijkt die twee als tekst, en daarin is `'...T02:00'`
+groter dan `'... 15:08'`. Het venster rekt dan stil op tot het begin van die
+dag: een vraag over 48 uur leverde in de praktijk 63 uur op, zonder foutmelding.
+Neem dus een grens in hetzelfde formaat:
+
+```sql
+WHERE ts > strftime('%Y-%m-%dT%H:%M:%S','now','-48 hours')
+```
+
+Een rekensom die over de hele periode hoort te kloppen — de som van de
+bedrijfsstanden in minuten, bijvoorbeeld — verraadt zo'n opgerekt venster
+meteen. De code in `analyse.py` geeft zijn grenzen expliciet mee en heeft dit
+probleem niet.
+
 ## Dingen die in de praktijk misgingen
 
 **De velden voor een eigen URL en token horen leeg te blijven.** Een
