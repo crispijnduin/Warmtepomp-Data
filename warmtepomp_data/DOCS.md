@@ -20,25 +20,25 @@ installatie goed staat ingeregeld.
 
 ## Instellingen
 
-**Integraties** — van welke integraties alles wordt vastgelegd. Voor Weheat is
+**Integrations** — van welke integraties alles wordt vastgelegd. Voor Weheat is
 `weheat` genoeg. Komma's ertussen voor meerdere.
 
-**Apparaten** — gebruik dit als de warmtepomp niet via een eigen integratie
+**Devices** — gebruik dit als de warmtepomp niet via een eigen integratie
 binnenkomt maar bijvoorbeeld via Modbus of MQTT. Vul de naam van het apparaat in
 zoals die in Home Assistant staat.
 
-**Losse entiteiten** — entiteiten die er inhoudelijk bij horen. Een eigen
+**Extra entities** — entiteiten die er inhoudelijk bij horen. Een eigen
 buitentemperatuursensor is sterk aan te raden: de sensor in de buitenunit loopt
 op door zon op de behuizing en meet dan veel te hoog.
 
-**Snapshot-interval** — hoe vaak de volledige stand wordt opgehaald als vangnet
+**Snapshot interval** — hoe vaak de volledige stand wordt opgehaald als vangnet
 voor gemiste wijzigingen. 300 seconden is ruim genoeg.
 
-**Historie ophalen** — hoeveel dagen bestaande historie bij het starten uit Home
+**Backfill days** — hoeveel dagen bestaande historie bij het starten uit Home
 Assistant wordt overgenomen. Laat dit op 400 staan bij de eerste start; daarna
 maakt het niets meer uit, want dubbele metingen worden genegeerd.
 
-**Eigen Home Assistant-URL en token** — normaal leeg laten. De app praat via de
+**Custom Home Assistant URL** en **Custom access token** — normaal leeg laten. De app praat via de
 Supervisor met Home Assistant en heeft geen token nodig. Werkt dat onverhoopt
 niet, vul dan beide in: de URL van Home Assistant en een langlevend token dat je
 onderaan je profielpagina aanmaakt.
@@ -93,7 +93,7 @@ Deze app legt zulke attributen vast als eigen meetreeks, onder de naam
 als kolom naast de aanvoertemperatuur van de warmtepomp, en zijn ze gewoon met
 SQL te bevragen.
 
-Zet de thermostaat-integratie daarvoor bij **Integraties**, bijvoorbeeld
+Zet de thermostaat-integratie daarvoor bij **Integrations**, bijvoorbeeld
 `weheat,evohome`. Bij het eerstvolgende starten haalt de backfill ook de
 historie op die Home Assistant nog heeft.
 
@@ -115,7 +115,7 @@ Discovery: 36 entiteiten gevonden over 1 apparaten
 Backfill bij starten: 12345 statistiekrijen, 67890 meetwaarden
 ```
 
-Staat er `Geen entiteiten gevonden`, dan klopt de instelling bij Integraties
+Staat er `Geen entiteiten gevonden`, dan klopt de instelling bij Integrations
 niet. Kijk in Home Assistant bij Instellingen, Apparaten en diensten welke
 integratie je warmtepomp levert.
 
@@ -128,7 +128,7 @@ energietellers: warmte gedeeld door stroom over dezelfde periode.
 
 **De buitentemperatuursensor loopt op.** Op een novemberdag van 11 °C gaf hij
 30 °C aan, door zon op de behuizing. Voeg voor weersafhankelijke analyse een
-losse buitensensor toe onder Losse entiteiten.
+losse buitensensor toe onder Extra entities.
 
 De app slaat alles onbewerkt op. Opschonen is een keuze bij de analyse, niet bij
 het vastleggen.

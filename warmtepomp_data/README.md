@@ -35,9 +35,9 @@ Eén bestand, zonder server, met SQL te bevragen en als geheel te back-uppen.
 Je hebt geen terminal, netwerkschijf of toegangstoken nodig. Home Assistant kan
 dit repo rechtstreeks installeren.
 
-1. Ga in Home Assistant naar **Instellingen → Add-ons** (op nieuwere versies
-   heet dit **Apps**) en open de **store**.
-2. Klik op het **menu rechtsboven (⋮) → Opslagplaatsen**.
+1. Ga in Home Assistant naar **Settings → Add-ons** (op nieuwere versies heet
+   dit **Apps**) en open de **store**.
+2. Klik op het **menu rechtsboven (⋮) → Repositories**.
 3. Plak deze URL en klik op **Toevoegen**:
 
    ```
