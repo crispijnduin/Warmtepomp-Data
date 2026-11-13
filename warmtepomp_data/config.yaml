@@ -1,6 +1,6 @@
 ---
 name: Warmtepomp Data
-version: "1.2.2"
+version: "1.2.3"
 slug: warmtepomp_data
 description: Legt alle beschikbare data van de warmtepomp vast in een eigen database
 url: 'https://github.com/crispijnduin/Warmtepomp-Data/tree/main/warmtepomp_data'

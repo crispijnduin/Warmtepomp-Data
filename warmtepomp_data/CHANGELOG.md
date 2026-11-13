@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.2.3
+
+- De controle op schrijfopdrachten weigerde ook `replace()`, de gewone
+  tekstfunctie van SQLite. Een leesvraag die entiteitsnamen inkortte kwam
+  daardoor niet door, met een melding over schrijven terwijl er niets werd
+  geschreven. De verbodslijst kijkt nu op `REPLACE INTO`; de schrijfvorm
+  `INSERT OR REPLACE` ketst al op `insert` af.
+
 ## 1.2.2
 
 - Een onbruikbare waarde in 'Custom Home Assistant URL' legde de hele app
