@@ -43,9 +43,10 @@ Alleen SELECT en WITH worden uitgevoerd.
 ## Gasmeterstanden
 
 De gebruiker geeft meterstanden door in het gesprek, vaak als foto. Zet elke
-stand als nieuwe regel in `data/gasmeter.csv`, met de datum van opnemen, en
-commit die. Zie `docs/gasmeter.md` voor het aflezen en de kolommen. Reken geen
-verbruik in het bestand uit; dat doet `scripts/gasverbruik.py`.
+stand als nieuwe regel in `data/gasmeter.csv`, met datum én tijdstip van
+opnemen, en commit die. Staat er geen tijd bij, vraag ernaar. Zie
+`docs/gasmeter.md` voor het aflezen en de kolommen. Reken geen verbruik in het
+bestand uit; dat doet `scripts/gasverbruik.py`.
 
 ## Dingen die in de praktijk misgingen
 

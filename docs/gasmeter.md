@@ -17,11 +17,16 @@ neem dan het cijfer dat er volledig staat.
 | kolom | betekenis |
 |---|---|
 | `datum` | `JJJJ-MM-DD`, de dag van opnemen |
+| `tijd` | `UU:MM` lokale tijd; leeg laten telt als middernacht |
 | `stand_m3` | de volledige stand in m³, decimalen met een punt |
 | `bron` | hoe de stand is vastgesteld: `foto`, `handmatig`, `jaarnota` |
 | `notitie` | vrij veld, mag leeg blijven |
 
-Eén rij per opname, oplopend op datum. De stand zelf wordt bewaard, niet het
+De tijd staat erbij omdat een halve dag bij dit verbruik al bijna een kuub
+scheelt: zonder tijdstip wordt het dagverbruik over een korte periode een slag
+in de lucht. Neem de standen daarom het liefst rond hetzelfde tijdstip op.
+
+Eén rij per opname, oplopend in tijd. De stand zelf wordt bewaard, niet het
 verbruik: verbruik is een verschil tussen twee rijen en kan altijd opnieuw
 uitgerekend worden, een overgeschreven stand niet.
 
