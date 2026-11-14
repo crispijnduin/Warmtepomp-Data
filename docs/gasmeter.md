@@ -26,6 +26,10 @@ De tijd staat erbij omdat een halve dag bij dit verbruik al bijna een kuub
 scheelt: zonder tijdstip wordt het dagverbruik over een korte periode een slag
 in de lucht. Neem de standen daarom het liefst rond hetzelfde tijdstip op.
 
+Wordt een stand doorgegeven zonder datum of tijd erbij, dan geldt het moment
+van doorgeven, in Nederlandse tijd. Een foto helpt daar niet bij: de EXIF-tijd
+overleeft het uploaden niet.
+
 Eén rij per opname, oplopend in tijd. De stand zelf wordt bewaard, niet het
 verbruik: verbruik is een verschil tussen twee rijen en kan altijd opnieuw
 uitgerekend worden, een overgeschreven stand niet.
