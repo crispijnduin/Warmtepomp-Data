@@ -271,6 +271,9 @@ warmtepomp_data/         <- de app zelf
   src/warmtepomp/        <- de code
   tests/
 docs/entiteiten.md       <- alle 36 sensoren met eenheden
+docs/gasmeter.md         <- hoe de gasmeterstanden worden bijgehouden
+data/gasmeter.csv        <- handmatig opgenomen gasmeterstanden
+scripts/gasverbruik.py   <- verbruik tussen twee standen
 deploy/systemd/          <- draaien buiten Home Assistant
 ```
 
