@@ -40,6 +40,20 @@ data:
 Het antwoord verschijnt in de attributen van `sensor.warmtepomp_query_result`.
 Alleen SELECT en WITH worden uitgevoerd.
 
+## Gasmeterstanden
+
+De gebruiker geeft meterstanden door in het gesprek, vaak als foto. Zet elke
+stand als nieuwe regel in `data/gasmeter.csv` en commit die. Zie
+`docs/gasmeter.md` voor het aflezen en de kolommen. Reken geen verbruik in het
+bestand uit; dat doet `scripts/gasverbruik.py`.
+
+Noemt de gebruiker geen datum of tijd, neem dan het moment van uploaden: de
+klok nu, omgerekend naar Europe/Amsterdam (`TZ=Europe/Amsterdam date
+'+%Y-%m-%d %H:%M'`). Een geüploade foto heeft geen EXIF meer om uit te lezen,
+die wordt bij het uploaden gestript. Noemt de gebruiker wél een datum of tijd,
+dan gaat die voor. Zet het gekozen tijdstip in je antwoord, zodat een
+vergissing opvalt.
+
 ## Dingen die in de praktijk misgingen
 
 **De velden voor een eigen URL en token horen leeg te blijven.** Een
