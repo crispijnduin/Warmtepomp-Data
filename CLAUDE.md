@@ -45,7 +45,8 @@ Alleen SELECT en WITH worden uitgevoerd.
 De gebruiker geeft meterstanden door in het gesprek, vaak als foto. Zet elke
 stand als nieuwe regel in `data/gasmeter.csv` en commit die. Zie
 `docs/gasmeter.md` voor het aflezen en de kolommen. Reken geen verbruik in het
-bestand uit; dat doet `scripts/gasverbruik.py`.
+bestand uit; dat doet `scripts/gasverbruik.py`, en `scripts/gasvraag.py`
+maakt de vraag die het gas naast de warmtepomptellers legt.
 
 Noemt de gebruiker geen datum of tijd, neem dan het moment van uploaden: de
 klok nu, omgerekend naar Europe/Amsterdam (`TZ=Europe/Amsterdam date

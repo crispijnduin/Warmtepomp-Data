@@ -43,6 +43,40 @@ python3 scripts/gasverbruik.py
 Geeft per interval het verbruik, het aantal dagen en het gemiddelde per dag,
 plus een totaalregel over alle opnames samen.
 
+## Gas naast de warmtepomp leggen
+
+De vraag achter deze standen is wat de pomp overneemt. Dat vergt de warmte- en
+stroomtellers van de pomp over precies dezelfde perioden. `gasvraag.py` maakt
+die vraag uit het CSV-bestand:
+
+```bash
+python3 scripts/gasvraag.py            # gas tegenover warmte, stroom en COP
+python3 scripts/gasvraag.py --ketel    # hoe lang de gasketel mocht bijstoken
+```
+
+Het drukt een `logbook.log`-blok af dat je plakt in *Developer tools →
+Actions*, YAML-modus. Het antwoord staat daarna in de attributen van
+`sensor.warmtepomp_query_result`.
+
+Het is een script en geen vastgelegde query, omdat de perioden met elke nieuwe
+meterstand veranderen: opgeslagen SQL zou na de eerstvolgende opname al over de
+verkeerde dagen gaan.
+
+| kolom | betekenis |
+|---|---|
+| `gas_m3` | verbruik uit de meterstanden |
+| `warmte_kwh` | wat de pomp aan warmte afgaf (`total_energy_output`) |
+| `stroom_kwh` | wat de pomp daarvoor opnam (`electricity_used`) |
+| `cop` | warmte gedeeld door stroom over de hele periode |
+| `gas_kwh` | het gas omgerekend naar nuttige warmte, à 8,8 kWh/m³ |
+| `pomp_pct` | aandeel van de pomp in warmte plus gas |
+
+Twee dingen die dit cijfer niet weet. Het gas bevat ook koken en warm water,
+die hier als verwarming meetellen; en 8,8 kWh/m³ is de bovenwaarde van
+aardgas maal een aangenomen ketelrendement van 90 %, geen meting. Voor de
+verhouding tussen de perioden maakt dat weinig uit, voor een absoluut getal
+wel.
+
 ## Waarom niet in de database
 
 `warmtepomp.sqlite` bevat wat Home Assistant zelf heeft gezien. Deze standen
